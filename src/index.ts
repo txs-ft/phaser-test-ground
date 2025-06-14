@@ -1,4 +1,13 @@
-import Phaser from 'phaser';
+// 开发环境使用模块导入
+// 生产环境使用全局 Phaser 变量
+if (import.meta.env.PROD) {
+  // 生产环境使用全局 Phaser
+  (window as any).Phaser = Phaser;
+} else {
+  // 开发环境保持模块导入
+  import Phaser from 'phaser';
+}
+
 import MainScene from './scenes/MainScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -13,4 +22,4 @@ const config: Phaser.Types.Core.GameConfig = {
   }
 };
 
-new Phaser.Game(config);
+const game = new (window as any).Phaser.Game(config);

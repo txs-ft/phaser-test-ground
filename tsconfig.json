@@ -6,8 +6,9 @@
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "outDir": "dist",
-    "sourceMap": true
+    "outDir": "dist ",
+    "sourceMap": true,
+    "types": ["vite/client", "./src/global"]
   },
   "include": ["src/**/*.ts"]
 }

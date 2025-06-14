@@ -1,11 +1,21 @@
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { createHtmlPlugin } from 'vite-plugin-html';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   publicDir: 'public',
   root: '.',  // 顯式設置根目錄
   
   plugins: [
+    createHtmlPlugin({
+      minify: true,
+      inject: {
+        data: {
+          // 注入环境变量
+          env: mode
+        }
+      }
+    }),
     viteStaticCopy({
       targets: [
         {
@@ -30,7 +40,17 @@ export default defineConfig({
     sourcemap: true,
     minify: 'terser',
     rollupOptions: {
-      input: 'index.html' // 更新為根目錄下的文件
+      input: 'index.html', // 更新為根目錄下的文件
+      external: [
+        'phaser'
+      ],
+      output: {
+        global: {
+          Phaser: 'Phaser'
+        },
+        format: 'iife',
+        generatedCode: 'es2015'
+      }
     }
   },
   
@@ -44,6 +64,6 @@ export default defineConfig({
   },
   
   optimizeDeps: {
-    include: ['phaser']
+    exclude: mode === 'production' ? ['phaser'] : []
   }
-});
+}));

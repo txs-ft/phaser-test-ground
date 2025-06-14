@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Phaser Game</title>
+  <!-- 使用 Vite 的条件注入 -->
+  <!-- #if env === 'production' -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <!-- #endif -->
 </head>
 <body>
+  <div id="game-container"></div>
   <script type="module" src="/src/index.ts"></script>
 </body>
 </html>
