@@ -20,22 +20,19 @@ export default defineConfig({
     open: true,
     port: 3000,
     host: 'localhost',
-    strictPort: true // 強制使用指定端口
+    strictPort: true, // 強制使用指定端口
+    hmr: { port: 3000 }
   },
   
   build: {
-    outDir: 'dist',
+    outDir: '../phaser-test-ground',
     assetsDir: 'assets',
     emptyOutDir: true,
-    sourcemap: true,
-    minify: 'terser',
+    sourcemap: false,
     rollupOptions: {
       input: 'index.html' // 更新為根目錄下的文件
     }
   },
-  
-  // 取消 base 配置的注釋（確保格式正確）
-  base: '/phaser-test-ground/',
   
   resolve: {
     alias: {
