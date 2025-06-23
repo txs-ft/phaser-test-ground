@@ -18,15 +18,15 @@ export default defineConfig({
   
   server: {
     open: true,
-    port: 3000,
-    host: 'localhost',
+    port: 5500,
+    host: '0.0.0.0',
     strictPort: true, // 強制使用指定端口
-    hmr: { port: 3000 }
+    hmr: { port: 5500 }
   },
   
   build: {
     outDir: '../phaser-test-ground',
-    assetsDir: 'assets',
+    assetsDir: './assets',
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
@@ -36,7 +36,7 @@ export default defineConfig({
   
   resolve: {
     alias: {
-      '/assets': '/public/assets'
+      './assets': '/public/assets'
     }
   },
   

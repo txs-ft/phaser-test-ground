@@ -4,12 +4,14 @@
   "author": "txs-ft",
   "license": "MIT",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --open \"?parts=The%20quick%20brown%20fox%7cjumps%7cover%7cthe%20lazy%20dog%7c,%7cand%7cfalls%7cinto%7ca%20rubbish%20bin%7c.`&n=The%20quick%20brown%20fox%7cthe%20lazy%20dog%7ca%20rubbish%20bin`&v=jumps`&adj=quick%7clazy`&prep=over%7cinto`&other=.%7c,%7cand\"",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "phaser": "^3.90.0"
+    "phaser": "^3.90.0",
+    "txs-phaser-core": "file:../dev-txs-phaser-core",
+    "@types/path-browserify": "^1.0.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.1",
