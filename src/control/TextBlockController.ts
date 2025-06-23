@@ -1,12 +1,25 @@
-import Phaser, { Input } from 'phaser';
 import { TextBlock } from '../objects/TextBlock';
 
+/**
+ * 實現{@link TextBlock}拖曳及點擊變色邏輯的控制器。
+ */
 export class TextBlockController extends Phaser.GameObjects.GameObject {
 
+  /**
+   * 用戶是否曾經拖曳字塊？
+   * 
+   * 是的話，我們不需要在用戶放手時讓字塊變色。
+   * 
+   * 否的話，用戶真的是在點擊字塊，所以需要變色。
+   */
   private hasDragged: boolean;
 
+  /**
+   * 創建一個{@link TextBlockController}個例。
+   * @param scene 場景
+   */
   constructor(scene: Phaser.Scene) {
-    super(scene, "controller");
+    super(scene, "TextBlockController");
     scene.add.existing(this);
     this.hasDragged = false;
     
@@ -16,6 +29,9 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
   
   // 使用普通事件
   
+  /**
+   * 設置用戶輸入邏輯。
+   */
   private setupInput() {
     const Events = Phaser.Input.Events;
     const input = this.scene.input;
@@ -50,10 +66,6 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
     // input.on(Events.POINTER_DOWN, this.onPointerDown.bind(this));
   }
 
-  private logBlock(block: TextBlock, msg: string): void {
-    console.log(`TextBlock${block.getId()}: ${msg}`);
-  }
-
   private onDown(
     pointer: Phaser.Input.Pointer,
     gameObject: Phaser.GameObjects.GameObject,
@@ -62,6 +74,7 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
     // console.log(`${this.constructor.name}.onDown: ${this.getPointerDragState(pointer)}`);
     this.hasDragged = false;
     this.logBlock(gameObject as TextBlock, "onDown");
+    event.stopPropagation();
   }
 
   private onDragStart(
@@ -124,6 +137,7 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
       this.logBlock(gameObject as TextBlock, "onUp, dragged");
     }
     this.hasDragged = false;
+    event.stopPropagation();
   }
 
   private onPointerDown(
@@ -143,6 +157,10 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
       "5 = Pointer actively dragging but has been released, notify draglist"
     ];
     return msg[this.scene.input.getDragState(pointer)];
+  }
+
+  private logBlock(block: TextBlock, msg: string): void {
+    console.log(`TextBlock${block.getId()}: ${msg}`);
   }
 
 /*

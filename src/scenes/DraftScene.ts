@@ -2,7 +2,11 @@ import { Core } from 'txs-phaser-core';
 import { TextBlock, TextBlockConfig } from "../objects/TextBlock";
 import { TextBlockController } from "../control/TextBlockController";
 import DraftGround from "../DraftGround";
+import { CameraController } from '../control/CameraController';
 
+/**
+ * 字塊拖曳工具的入口場景。
+ */
 export default class DraftScene extends Phaser.Scene {
 
   /*
@@ -12,20 +16,33 @@ export default class DraftScene extends Phaser.Scene {
   ✅能分辨點擊和拖曳TextBlock
   ✅在有物理引擎影響下拖曳並投擲TextBlock
   ✅分析並解決TextBlock之間沒有碰撞的問題：未this.scene.physics.add.collider。
-  🟡介面如何處理？從HTML收到用戶的輸入？
-  🔴如何從Phaser之中導出內容至設備clipboard
+  ✅介面如何處理？從HTML收到用戶的輸入？
+  ✅如何從Phaser之中導出內容至設備clipboard
+  🟡鏡頭要能夠拖曳移動及縮放
+  🟡TextBlock需要能夠在被點擊時循環變色
 
   */
 
   /**
-   * 於create內生成，可視為必定存在。
+   * 控制{@link TextBlock}拖曳和點擊邏輯的控制器。
+   * 
+   * 於{@link Phaser.Scene#create}內生成，可視為必定存在。
    */
   private textBlockController!: TextBlockController;
 
   /**
-   * 裝載{@link TextBlock}對象的池子，於{@link DraftGround#constructor}內生成。
+   * 控制單個{@link Phaser.Cameras.Scene2D.Camera}的控制器。
+   * 
+   * 於{@link Phaser.Scene#create}內生成，可視為必定存在。
    */
-  private textBlockPool!: Core.Pool<TextBlock, TextBlockConfig>;
+  private cameraController!: CameraController;
+
+  /**
+   * 裝載{@link TextBlock}對象的池子。
+   * 
+   * 於{@link DraftGround}構造函數內生成。
+   */
+  private textBlockPool: Core.Pool<TextBlock, TextBlockConfig>;
 
   /**
    * 用於設置{@link TextBlock}初始狀態的設定個例。
@@ -60,7 +77,7 @@ export default class DraftScene extends Phaser.Scene {
   /**
    * 見{@link Phaser.Scene#init}。
    */
-  private init() {
+  init() {
     const game = (this.game as DraftGround);
     game.registerCreate(this, this.onRequestCreateByUI);
     game.registerReset(this, this.onRequestResetByUI);
@@ -94,7 +111,7 @@ export default class DraftScene extends Phaser.Scene {
    */
   private onRequestResetByUI(sender: DraftGround, eventArgs: typeof undefined): void {
     console.log(`onRequestResetByUI`);
-    this.arrangeTextBlocks(this.textBlocks, this.scale.width, this.scale.height);
+    this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
   }
 
   /**
@@ -124,9 +141,20 @@ export default class DraftScene extends Phaser.Scene {
   create() {
     console.log("create()");
 
-    this.textBlockController = new TextBlockController(this);
+    // 設定場地大小為1200x1200px，初始中心點為(0, 0)
+    this.physics.world.setBounds(
+      -600, // x
+      -600, // y
+      1200, // width
+      1200, // height
+      true, // checkLeft
+      true, // checkRight,
+      true, // checkUp,
+      true, // checkDown
+    );
 
-    this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
+    this.cameraController = new CameraController(this);
+    this.textBlockController = new TextBlockController(this);
 
     const params = new URLSearchParams(window.location.search);
     const parts = params.get("parts")?.split("|");
@@ -184,7 +212,7 @@ export default class DraftScene extends Phaser.Scene {
       
       this.physics.add.collider(this.textBlocks, this.textBlocks);
 
-      this.arrangeTextBlocks(this.textBlocks, this.scale.width, this.scale.height);
+      this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
     } else {
       console.error("無字塊可生。")
     }
@@ -200,39 +228,43 @@ export default class DraftScene extends Phaser.Scene {
    * @param options 排列設置，不用碰
    */
   private arrangeTextBlocks(
-    texts: TextBlock[],
-    worldWidth: number,
-    worldHeight: number,
-    options: {
-      maxIterations?: number;
-      repulsionForce?: number;
-      boundaryForce?: number;
-      initialStep?: number;
-    } = {}
+      texts: Phaser.GameObjects.Text[],
+      worldBounds: Phaser.Geom.Rectangle,
+      options: {
+          maxIterations?: number;
+          repulsionForce?: number;
+          boundaryForce?: number;
+          initialStep?: number;
+      } = {}
   ): void {
-    // 配置参数
-    const maxIterations = options.maxIterations || 100;
-    const repulsionForce = options.repulsionForce || 1000;
-    const boundaryForce = options.boundaryForce || 100;
-    const initialStep = options.initialStep || 10;
+    // 解构边界参数
+    const { width: worldWidth, height: worldHeight } = worldBounds;
+    
+    // 配置参数（带默认值）
+    const {
+      maxIterations = 100,
+      repulsionForce = 1000,
+      boundaryForce = 100,
+      initialStep = 10
+    } = options;
 
-    // 初始化位置（随机分布）
+    // 初始化随机位置
     texts.forEach(text => {
         text.setPosition(
-            Math.random() * worldWidth,
-            Math.random() * worldHeight
+            worldBounds.x + Math.random() * worldWidth,
+            worldBounds.y + Math.random() * worldHeight
         );
     });
 
     // 迭代优化布局
     for (let iter = 0; iter < maxIterations; iter++) {
       const stepSize = initialStep * (1 - iter / maxIterations); // 线性衰减步长
-
+    
       texts.forEach((textA, i) => {
         let totalDx = 0;
         let totalDy = 0;
-
-        // 文本间斥力
+    
+        // 文本间斥力计算
         texts.forEach((textB, j) => {
           if (i === j) return;
           
@@ -240,36 +272,36 @@ export default class DraftScene extends Phaser.Scene {
           const dy = textA.y - textB.y;
           const distance = Math.sqrt(dx * dx + dy * dy) || 0.1;
           
-          // 库仑斥力模型 (F = k / r)
+          // 库仑斥力模型 (F = k / r²)
           const force = repulsionForce / (distance * distance);
           totalDx += (dx / distance) * force;
           totalDy += (dy / distance) * force;
         });
-
-        // 边界斥力
-        const { x, y } = textA;
-        const distToEdges = [
-          x,               // 左边界距离
-          worldWidth - x,  // 右边界距离
-          y,               // 上边界距离
-          worldHeight - y  // 下边界距离
-        ];
-        const minDist = Math.min(...distToEdges);
+    
+        // 边界斥力计算
+        const distToLeft = textA.x - worldBounds.x;
+        const distToRight = worldBounds.right - textA.x;
+        const distToTop = textA.y - worldBounds.y;
+        const distToBottom = worldBounds.bottom - textA.y;
         
-        // 边界斥力模型 (F = k / d)
-        const edgeForce = boundaryForce / (minDist * minDist);
-        totalDx += (x < worldWidth / 2 ? edgeForce : -edgeForce);
-        totalDy += (y < worldHeight / 2 ? edgeForce : -edgeForce);
-
+        // 边界斥力模型 (F = k / d²)
+        const leftForce = boundaryForce / (distToLeft * distToLeft);
+        const rightForce = boundaryForce / (distToRight * distToRight);
+        const topForce = boundaryForce / (distToTop * distToTop);
+        const bottomForce = boundaryForce / (distToBottom * distToBottom);
+        
+        totalDx += leftForce - rightForce;
+        totalDy += topForce - bottomForce;
+    
         // 计算新位置
         const magnitude = Math.sqrt(totalDx * totalDx + totalDy * totalDy) || 1;
         const newX = textA.x + (totalDx / magnitude) * stepSize;
         const newY = textA.y + (totalDy / magnitude) * stepSize;
-
-        // 应用新位置
+    
+        // 应用新位置（确保在边界内）
         textA.setPosition(
-          Math.max(0, Math.min(worldWidth, newX)),
-          Math.max(0, Math.min(worldHeight, newY))
+          Math.max(worldBounds.x, Math.min(worldBounds.right, newX)),
+          Math.max(worldBounds.y, Math.min(worldBounds.bottom, newY))
         );
       });
     }
@@ -322,6 +354,10 @@ export default class DraftScene extends Phaser.Scene {
                 .map(t => t.text)
                 .join(' '); // 加插空格連接
     }).join(' '); // 行間無須用換行符分隔
+  }
+
+  public update(time: number, delta: number): void {
+    this.cameraController.update(time, delta);
   }
 
 }
