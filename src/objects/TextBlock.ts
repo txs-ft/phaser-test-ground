@@ -1,4 +1,4 @@
-import { IPoolable } from "txs-phaser-core/dist/core";
+import { IPoolable } from "txs-phaser-core";
 
 const shadowStyle: Phaser.Types.GameObjects.Text.TextShadow = {
   offsetX: 1,
@@ -72,11 +72,12 @@ export class TextBlock extends Phaser.GameObjects.Text implements IPoolable<Text
     this.setPosition(config.x, config.y);
     this.setActive(true);
     this.setVisible(true);
-    this.disableInteractive();
+    this.setInteractive();
     if (this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setEnable(true);
       body.setSize();
+      body.checkCollision.none = false;
     }
   }
 
@@ -87,14 +88,15 @@ export class TextBlock extends Phaser.GameObjects.Text implements IPoolable<Text
     if (this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setEnable(false);
+      body.checkCollision.none = true;
     }
   }
 
   public enablePhysics() {
     this.scene.physics.add.existing(this); // 此行前body為null
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setBounce(0.4, 0.4)
-      .setDrag(400, 400)
+    body.setBounce(0.1, 0.1)
+      .setDrag(1600, 1600)
       .setCollideWorldBounds(true);
   }
 

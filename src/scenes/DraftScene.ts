@@ -1,8 +1,7 @@
-import { Core } from 'txs-phaser-core';
+import { CameraController, Pool } from 'txs-phaser-core';
 import { TextBlock, TextBlockConfig } from "../objects/TextBlock";
 import { TextBlockController } from "../control/TextBlockController";
 import DraftGround from "../DraftGround";
-import { CameraController } from '../control/CameraController';
 
 /**
  * 字塊拖曳工具的入口場景。
@@ -42,7 +41,7 @@ export default class DraftScene extends Phaser.Scene {
    * 
    * 於{@link DraftGround}構造函數內生成。
    */
-  private textBlockPool: Core.Pool<TextBlock, TextBlockConfig>;
+  private textBlockPool: Pool<TextBlock, TextBlockConfig>;
 
   /**
    * 用於設置{@link TextBlock}初始狀態的設定個例。
@@ -71,7 +70,7 @@ export default class DraftScene extends Phaser.Scene {
       draggable: true,
       enablePhysics: true
     };
-    this.textBlockPool = new Core.Pool(TextBlock);
+    this.textBlockPool = new Pool(TextBlock);
   }
 
   /**
@@ -79,9 +78,15 @@ export default class DraftScene extends Phaser.Scene {
    */
   init() {
     const game = (this.game as DraftGround);
-    game.registerCreate(this, this.onRequestCreateByUI);
-    game.registerReset(this, this.onRequestResetByUI);
-    game.registerCopy(this, this.onRequestCopyByUI);
+    // game.registerCreate(this, this.onRequestCreateByUI);
+    // game.registerReset(this, this.onRequestResetByUI);
+    // game.registerCopy(this, this.onRequestCopyByUI);
+    this.onRequestCreateByUI = this.onRequestCreateByUI.bind(this);
+    this.onRequestResetByUI = this.onRequestResetByUI.bind(this);
+    this.onRequestCopyByUI = this.onRequestCopyByUI.bind(this);
+    game.CreateRequested.on(this.onRequestCreateByUI);
+    game.ResetRequested.on(this.onRequestResetByUI);
+    game.CopyRequested.on(this.onRequestCopyByUI);
     this.events.on(Phaser.Scenes.Events.DESTROY, this.onSceneDestroy);
   }
 
@@ -107,19 +112,18 @@ export default class DraftScene extends Phaser.Scene {
    * 
    * 我們讓所有{@link TextBlock}重新排列一次。
    * @param sender 遊戲個例
-   * @param eventArgs 無事件資訊
    */
-  private onRequestResetByUI(sender: DraftGround, eventArgs: typeof undefined): void {
+  private onRequestResetByUI(sender: DraftGround): void {
     console.log(`onRequestResetByUI`);
-    this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
+    //this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
+    this.arrangeTextBlocks2(this.textBlocks);
   }
 
   /**
    * 會在用戶通過{@link DraftGroundHtmlUI}的按鈕要求複製現有{@link TextBlock}上的文字時調用。
    * @param sender 遊戲個例
-   * @param eventArgs 無事件資訊
    */
-  private async onRequestCopyByUI(sender: DraftGround, eventArgs: typeof undefined): Promise<void> {
+  private async onRequestCopyByUI(sender: DraftGround): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.combineTextBlocks(this.textBlocks));
       alert('复制成功!');
@@ -132,6 +136,10 @@ export default class DraftScene extends Phaser.Scene {
   private onSceneDestroy(): void {
     console.log(`onSceneDestroy: ${this.constructor.name}`);
     this.events.off(Phaser.Scenes.Events.DESTROY, this.onSceneDestroy);
+    const game = this.game as DraftGround;
+    game.CreateRequested.off(this.onRequestCopyByUI);
+    game.ResetRequested.off(this.onRequestResetByUI);
+    game.CopyRequested.off(this.onRequestCopyByUI);
   }
 
   preload() {
@@ -153,13 +161,26 @@ export default class DraftScene extends Phaser.Scene {
       true, // checkDown
     );
 
-    this.cameraController = new CameraController(this);
+    this.input.addPointer(1); // 本來有mousePointer和一個Pointer可用，現多添加一個
+    this.cameraController = new CameraController(
+      this,
+      this.cameras.main,
+      this.input.pointer1,
+      this.input.pointer2,
+      this.physics.world.bounds
+    );
     this.textBlockController = new TextBlockController(this);
 
     const params = new URLSearchParams(window.location.search);
     const parts = params.get("parts")?.split("|");
 
     this.createFromParts(parts);
+
+    //const config: Phaser.Types.GameObjects.Group.GroupConfig = {
+    //  classType: TextBlock,
+    //  runChildUpdate: true
+    //}
+    //const blocks = this.add.group(config);
 
     // 以下代碼與this.physics.add.collider的方法不相容
     // 只能二選一
@@ -206,13 +227,14 @@ export default class DraftScene extends Phaser.Scene {
 
       const config = this.textBlockConfig;
       for (let i=0; i<parts.length; i++) {
-        config.text = parts[i];
+        config.text = parts[i].trim();
         this.textBlocks.push(this.textBlockPool.get(config));
       }
       
       this.physics.add.collider(this.textBlocks, this.textBlocks);
 
-      this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
+      //this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
+      this.arrangeTextBlocks2(this.textBlocks);
     } else {
       console.error("無字塊可生。")
     }
@@ -307,6 +329,62 @@ export default class DraftScene extends Phaser.Scene {
     }
   }
 
+  private arrangeTextBlocks2(textBlocks: TextBlock[]): void {
+      if (textBlocks.length === 0) {
+          return;
+      }
+
+      // 所有文本块高度相同，取第一个的高度
+      const textHeight = textBlocks[0].height;
+
+      // 按宽度降序排序（优先处理宽文本块）
+      textBlocks.sort((a, b) => b.width - a.width);
+
+      // 基础行号循环序列：0（中心行）、1（上）、-1（下）、2（上）、-2（下）
+      const CYCLE_BASE = [0, 1, -1, 2, -2];
+      const rowNumbers: number[] = [];
+      
+      // 生成行号序列（循环使用基础序列）
+      for (let i = 0; i < textBlocks.length; i++) {
+          rowNumbers.push(CYCLE_BASE[i % CYCLE_BASE.length]);
+      }
+
+      // 按行号分组文本块
+      const rowMap: { [key: number]: TextBlock[] } = {};
+      for (let i = 0; i < textBlocks.length; i++) {
+          const rowNum = rowNumbers[i];
+          if (!rowMap[rowNum]) {
+              rowMap[rowNum] = [];
+          }
+          rowMap[rowNum].push(textBlocks[i]);
+      }
+
+      // 处理每一行
+      for (const rowNum of Object.keys(rowMap).map(Number)) {
+          const blocks = rowMap[rowNum];
+          
+          // 计算行总宽度（所有块宽 + 间隙）
+          let totalRowWidth = 0;
+          for (const block of blocks) {
+              totalRowWidth += block.width;
+          }
+          totalRowWidth += 15 * (blocks.length - 1); // 块间间隙
+          
+          // 设置行起始X位置（使行居中）
+          let currentX = -totalRowWidth / 2;
+          
+          // 放置该行所有文本块
+          for (const block of blocks) {
+              // 设置文本块中心坐标
+              block.x = currentX + block.width / 2;
+              block.y = rowNum * (textHeight + 15); // 行间垂直间距
+              
+              // 更新X位置（当前块右边界 + 间隙）
+              currentX += block.width + 15;
+          }
+      }
+  }
+
   /**
    * 從字塊的位置，推算出用戶想排列出的文字。DeepSeek🐳寫的。
    * @param textBlocks 字塊陣列
@@ -356,8 +434,8 @@ export default class DraftScene extends Phaser.Scene {
     }).join(' '); // 行間無須用換行符分隔
   }
 
-  public update(time: number, delta: number): void {
+  /*public update(time: number, delta: number): void {
     this.cameraController.update(time, delta);
-  }
+  }*/
 
 }

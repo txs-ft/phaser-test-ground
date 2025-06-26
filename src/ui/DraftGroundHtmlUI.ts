@@ -1,4 +1,5 @@
 import DraftGround from '../DraftGround';
+import DraftGroundInputValidator from './DraftGroundInputValidator';
 
 export class DraftGroundHtmlUI {
   
@@ -11,6 +12,7 @@ export class DraftGroundHtmlUI {
   private divCreate_btnCreate: HTMLButtonElement;
   private divCreate_btnClear: HTMLButtonElement;
   private divCreate_btnPaste: HTMLButtonElement;
+  private inputValidator: DraftGroundInputValidator;
 
   constructor(game: DraftGround) {
     this.game = game;
@@ -22,6 +24,7 @@ export class DraftGroundHtmlUI {
     this.divCreate_btnCreate = this.getElement("divCreate_btnCreate") as HTMLButtonElement;
     this.divCreate_btnClear = this.getElement("divCreate_btnClear") as HTMLButtonElement;
     this.divCreate_btnPaste = this.getElement("divCreate_btnPaste") as HTMLButtonElement;
+    this.inputValidator = new DraftGroundInputValidator(this.divCreate_btnCreate, this.divCreate_textAreaNew);
 
     this.btnCreate.addEventListener("click", () => {
       if (this.divCreate.classList.contains("hidden")) {

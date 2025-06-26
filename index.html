@@ -206,6 +206,23 @@
             background: #2980b9;
         }
 
+        /* 添加在現有的按鈕樣式之後 */
+        #game-ui > button:disabled,
+        #divButtons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #95a5a6 !important;
+            transform: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+
+        #game-ui > button:disabled:hover,
+        #divButtons button:disabled:hover {
+            background: #95a5a6 !important;
+            transform: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+
         /* 文本区域样式 */
         #divCreate_textAreaNew {
             flex-grow: 1;

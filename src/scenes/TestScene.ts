@@ -1,10 +1,10 @@
-import { English } from 'txs-phaser-core';
+import { PoSCollection } from 'txs-phaser-core';
 import {Math as PhMath} from 'phaser';
 import {TextBlock} from '../objects/TextBlock';
 
 export default class TestScene extends Phaser.Scene {
 
-  private partsOfSpeech: English.PoSCollection | undefined;
+  private partsOfSpeech: PoSCollection | undefined;
 
   constructor() {
     super('MainScene');
@@ -17,7 +17,7 @@ export default class TestScene extends Phaser.Scene {
     console.log(`Raw: ${queryString}`);
     console.log(`Decoded: ${decodeURIComponent(queryString)}`);
     console.log(`URLSearchParams.toString(): ${params.toString()}`);
-    const collection = English.PoSCollection.fromQueryString(queryString, false);
+    const collection = PoSCollection.fromQueryString(queryString, false);
     console.log(collection);
     console.log(collection.toQueryString());
     console.log(collection.toFullURL("https://examples.com"));

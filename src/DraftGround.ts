@@ -1,45 +1,25 @@
-import {Core} from 'txs-phaser-core';
+import {Callback, Event} from 'txs-phaser-core';
 
 export default class DraftGround extends Phaser.Game {
 
-  private createCallback: Core.CallbackEmitter<DraftGround, string>;
-  private resetCallback: Core.CallbackEmitter<DraftGround, typeof undefined>;
-  private copyCallback: Core.CallbackEmitter<DraftGround, typeof undefined>;
 
-  constructor(config?: Phaser.Types.Core.GameConfig) {
-    super(config);
-    this.createCallback = new Core.CallbackEmitter(this);
-    this.resetCallback = new Core.CallbackEmitter(this);
-    this.copyCallback = new Core.CallbackEmitter(this);
-  }
+  public readonly CreateRequested = new Event<DraftGround, [string]>();
 
-  public registerCreate(receiver: object, callback: Core.Callback<DraftGround, string>): void {
-    this.createCallback.register(receiver, callback);
-  }
+  public readonly ResetRequested = new Event<DraftGround>();
 
-  public registerReset(receiver: object, callback: Core.Callback<DraftGround, undefined>): void {
-    this.resetCallback.register(receiver, callback);
-  }
+  public readonly CopyRequested = new Event<DraftGround>();
 
-  public registerCopy(receiver: object, callback: Core.Callback<DraftGround, undefined>): void {
-    this.copyCallback.register(receiver, callback);
-  }
 
   public requestCreate(question: string): void {
-    this.createCallback.emit(question);
+    this.CreateRequested.invoke(this, question);
   }
 
   public requestReset(): void {
-    this.resetCallback.emit(undefined);
+    this.ResetRequested.invoke(this);
   }
 
   public requestCopy(): void {
-    this.copyCallback.emit(undefined);
-  }
-
-  public clearRegisters(): void {
-    this.createCallback.clear();
-    this.resetCallback.clear();
+    this.CopyRequested.invoke(this);
   }
 
 }

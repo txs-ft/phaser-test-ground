@@ -8,6 +8,7 @@
 		"editor.fontFamily": "Maple Mono NL NF CN",
 		"editor.fontWeight": 300,
 		"editor.fontSize": 20,
-		"editor.wordWrap": "on"
+		"editor.wordWrap": "on",
+		"git.autorefresh": true
 	},
 }
