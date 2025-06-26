@@ -109,6 +109,10 @@ export default class DraftScene extends Phaser.Scene {
   private onRequestResetByUI(sender: DraftGround): void {
     console.log(`onRequestResetByUI`);
     //this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
+    if (this.textBlocks.length === 0) {
+      alert("場景中無字塊可排列。");
+      return;
+    }
     this.arrangeTextBlocks2(this.textBlocks);
   }
 
@@ -117,12 +121,16 @@ export default class DraftScene extends Phaser.Scene {
    * @param sender 遊戲個例
    */
   private async onRequestCopyByUI(sender: DraftGround): Promise<void> {
+    if (this.textBlocks.length === 0) {
+      alert("沒有能生成的字塊！");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(this.combineTextBlocks(this.textBlocks));
-      alert('复制成功!');
+      alert('複製成功!');
     } catch (error) {
       console.error("複製失敗！", error);
-      alert('请手动复制内容');
+      alert('請手動複製內容…😅');
     }
   }
 
@@ -142,7 +150,7 @@ export default class DraftScene extends Phaser.Scene {
   create() {
     console.log("create()");
 
-    this.createBackground();
+    this.createWorkingArea();
 
     this.input.addPointer(1); // 本來有mousePointer和一個Pointer可用，現多添加一個
     this.cameraController = new CameraController(
@@ -214,9 +222,9 @@ export default class DraftScene extends Phaser.Scene {
 
   }
 
-  private createBackground() {
-    const width = this.scale.width * 1.5;
-    const height = this.scale.height * 1.5;
+  private createWorkingArea() {
+    const width = Math.max(this.scale.width * 1.5, 1800);
+    const height = Math.max(this.scale.height * 1.5, 1800);
     const halfWidth = width / 2;
     const halfHeight = height / 2;
 
