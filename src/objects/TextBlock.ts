@@ -9,7 +9,7 @@ const shadowStyle: Phaser.Types.GameObjects.Text.TextShadow = {
   fill: true
 } as const;
 
-const defaultTextStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+export const defaultTextStyle: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: "Arial",
   fontSize: "24px",
   fontStyle: "bold",

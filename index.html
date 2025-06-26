@@ -132,6 +132,11 @@
             font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
             max-width: 100vw;
             box-sizing: border-box;
+            user-select: none;        /* 標準屬性 */
+            -webkit-user-select: none; /* Safari/Chrome */
+            -moz-user-select: none;   /* Firefox */
+            -ms-user-select: none;    /* IE/Edge */
+            pointer-events: none;     /* 禁止滑鼠事件穿透 */
         }
 
         /* 顶部按钮栏布局 */
@@ -148,6 +153,11 @@
             margin: 5px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
+            user-select: auto;        /* 標準屬性 */
+            -webkit-user-select: auto; /* Safari/Chrome */
+            -moz-user-select: auto;   /* Firefox */
+            -ms-user-select: auto;    /* IE/Edge */
+            pointer-events: auto;     /* 禁止滑鼠事件穿透 */
         }
 
         /* 按钮悬停效果 */
@@ -199,6 +209,11 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
+            user-select: auto;        /* 標準屬性 */
+            -webkit-user-select: auto; /* Safari/Chrome */
+            -moz-user-select: auto;   /* Firefox */
+            -ms-user-select: auto;    /* IE/Edge */
+            pointer-events: auto;     /* 禁止滑鼠事件穿透 */
         }
 
         #divButtons button:hover {
@@ -237,6 +252,11 @@
             resize: none;
             outline: none;
             box-sizing: border-box;
+            user-select: auto;        /* 標準屬性 */
+            -webkit-user-select: auto; /* Safari/Chrome */
+            -moz-user-select: auto;   /* Firefox */
+            -ms-user-select: auto;    /* IE/Edge */
+            pointer-events: auto;     /* 禁止滑鼠事件穿透 */
         }
 
         /* 标题样式 */

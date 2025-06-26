@@ -6,19 +6,16 @@ class DraftGroundInputValidator {
     constructor(createBtn: HTMLButtonElement, textArea: HTMLTextAreaElement) {
         this.createBtn = createBtn;
         this.textArea = textArea;
+        this.validateAndUpdate = this.validateAndUpdate.bind(this);
         
         // 初始验证
         this.validateAndUpdate();
         
         // 添加输入事件监听
-        this.textArea.addEventListener('input', this.handleInput);
+        this.textArea.addEventListener('input', this.validateAndUpdate);
     }
 
-    private handleInput = () => {
-        this.validateAndUpdate();
-    }
-
-    private validateAndUpdate(): void {
+    public validateAndUpdate(): void {
         const isValid = this.validateInput(this.textArea.value);
         this.createBtn.disabled = !isValid;
         this.textArea.style.borderColor = isValid ? 'green' : 'red';
@@ -44,7 +41,7 @@ class DraftGroundInputValidator {
     }
 
     public destroy(): void {
-        this.textArea.removeEventListener('input', this.handleInput);
+        this.textArea.removeEventListener('change', this.validateAndUpdate);
     }
 }
 

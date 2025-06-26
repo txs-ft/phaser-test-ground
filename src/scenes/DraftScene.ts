@@ -1,6 +1,7 @@
-import { CameraController, Pool } from 'txs-phaser-core';
-import { TextBlock, TextBlockConfig } from "../objects/TextBlock";
+import { CameraController } from 'txs-phaser-core';
+import { PhraseBlock as TextBlock } from "../objects/PhraseBlock";
 import { TextBlockController } from "../control/TextBlockController";
+import { DisplayUtils } from 'txs-phaser-core';
 import DraftGround from "../DraftGround";
 
 /**
@@ -25,9 +26,16 @@ export default class DraftScene extends Phaser.Scene {
   /**
    * 控制{@link TextBlock}拖曳和點擊邏輯的控制器。
    * 
-   * 於{@link Phaser.Scene#create}內生成，可視為必定存在。
+   * 於{@link DraftScene#create}內生成，可視為必定存在。
    */
   private textBlockController!: TextBlockController;
+
+  /**
+   * 背景網格。
+   * 
+   * 於{@link DraftScene#create}內生成，可視為必定存在。
+   */
+  private backgroundGrid!: Phaser.GameObjects.Graphics;
 
   /**
    * 控制單個{@link Phaser.Cameras.Scene2D.Camera}的控制器。
@@ -37,23 +45,16 @@ export default class DraftScene extends Phaser.Scene {
   private cameraController!: CameraController;
 
   /**
-   * 裝載{@link TextBlock}對象的池子。
-   * 
-   * 於{@link DraftGround}構造函數內生成。
-   */
-  private textBlockPool: Pool<TextBlock, TextBlockConfig>;
-
-  /**
-   * 用於設置{@link TextBlock}初始狀態的設定個例。
-   * 
-   * 改變個例內部的值，然後使用個例作為生成參數。
-   */
-  private textBlockConfig!: TextBlockConfig;
-
-  /**
    * 儲存所有活躍{@link TextBlock}對象的列陣。
    */
   private textBlocks: TextBlock[];
+
+  /**
+   * Phaser本身的緩存池。
+   * 
+   * 於{@linkcode DraftScene#create}內生成，可視為必定存在。
+   */
+  private textBlockGroup!: Phaser.Physics.Arcade.Group;
 
   /**
    * 生成一個{@link DraftScene}個例。
@@ -62,15 +63,6 @@ export default class DraftScene extends Phaser.Scene {
   constructor(config: Phaser.Types.Scenes.SettingsConfig) {
     super(config);
     this.textBlocks = new Array<TextBlock>();
-    this.textBlockConfig = {
-      scene: this,
-      x: 0,
-      y: 0,
-      text: "",
-      draggable: true,
-      enablePhysics: true
-    };
-    this.textBlockPool = new Pool(TextBlock);
   }
 
   /**
@@ -101,7 +93,8 @@ export default class DraftScene extends Phaser.Scene {
     if (question) {
       const parts = question.split("|");
       console.log(`onRequestCreateByUI: ${parts}`);
-      this.textBlockPool.put(...this.textBlocks); // 歸池
+      for (const block of this.textBlocks)
+        this.textBlockGroup.killAndHide(block);
       this.textBlocks.length = 0; // 清除活躍陣列
       this.createFromParts(parts); // 重新生成
     }
@@ -149,17 +142,7 @@ export default class DraftScene extends Phaser.Scene {
   create() {
     console.log("create()");
 
-    // 設定場地大小為1200x1200px，初始中心點為(0, 0)
-    this.physics.world.setBounds(
-      -600, // x
-      -600, // y
-      1200, // width
-      1200, // height
-      true, // checkLeft
-      true, // checkRight,
-      true, // checkUp,
-      true, // checkDown
-    );
+    this.createBackground();
 
     this.input.addPointer(1); // 本來有mousePointer和一個Pointer可用，現多添加一個
     this.cameraController = new CameraController(
@@ -173,6 +156,19 @@ export default class DraftScene extends Phaser.Scene {
 
     const params = new URLSearchParams(window.location.search);
     const parts = params.get("parts")?.split("|");
+
+    this.textBlockGroup = this.physics.add.group({
+      classType: TextBlock,
+      maxSize: 100,
+      runChildUpdate: false,
+      collideWorldBounds: true,
+      allowGravity: false,
+      dragX: 16000,
+      dragY: 16000,
+      bounceX: 0.05,
+      bounceY: 0.05
+    });
+    this.physics.add.collider(this.textBlocks, this.textBlocks);
 
     this.createFromParts(parts);
 
@@ -218,6 +214,33 @@ export default class DraftScene extends Phaser.Scene {
 
   }
 
+  private createBackground() {
+    const width = this.scale.width * 1.5;
+    const height = this.scale.height * 1.5;
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // 設定場地大小為瀏覽器場景的150%，初始中心點為(0, 0)
+    this.physics.world.setBounds(
+      -halfWidth, // x
+      -halfHeight, // y
+      width, // width
+      height, // height
+      true, // checkLeft
+      true, // checkRight,
+      true, // checkUp,
+      true
+    );
+
+    this.backgroundGrid = DisplayUtils.createBackgroundGrid(
+      this,
+      width, height,
+      100, 100,
+      "#000000", "#404040"
+    );
+    this.backgroundGrid.setPosition(-halfWidth, -halfHeight);
+  }
+
   /**
    * 生成{@link TextBlock}。
    * @param parts 問題的字塊
@@ -225,15 +248,12 @@ export default class DraftScene extends Phaser.Scene {
   private createFromParts(parts: string[] | undefined) {
     if (parts) {
 
-      const config = this.textBlockConfig;
       for (let i=0; i<parts.length; i++) {
-        config.text = parts[i].trim();
-        this.textBlocks.push(this.textBlockPool.get(config));
+        const block = this.textBlockGroup.get() as TextBlock;
+        block.initialize(parts[i].trim());
+        this.textBlocks.push(block);
       }
-      
-      this.physics.add.collider(this.textBlocks, this.textBlocks);
 
-      //this.arrangeTextBlocks(this.textBlocks, this.physics.world.bounds);
       this.arrangeTextBlocks2(this.textBlocks);
     } else {
       console.error("無字塊可生。")
@@ -245,13 +265,10 @@ export default class DraftScene extends Phaser.Scene {
    * 
    * 註：DeepSeek🐳寫的。
    * @param texts 字塊陣列
-   * @param worldWidth 世界寬度
-   * @param worldHeight 世界高度
    * @param options 排列設置，不用碰
    */
   private arrangeTextBlocks(
       texts: Phaser.GameObjects.Text[],
-      worldBounds: Phaser.Geom.Rectangle,
       options: {
           maxIterations?: number;
           repulsionForce?: number;
@@ -259,6 +276,7 @@ export default class DraftScene extends Phaser.Scene {
           initialStep?: number;
       } = {}
   ): void {
+    const worldBounds = this.physics.world.bounds;
     // 解构边界参数
     const { width: worldWidth, height: worldHeight } = worldBounds;
     
@@ -329,6 +347,11 @@ export default class DraftScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * 
+   * @param textBlocks 字塊陣列
+   * @returns 
+   */
   private arrangeTextBlocks2(textBlocks: TextBlock[]): void {
       if (textBlocks.length === 0) {
           return;

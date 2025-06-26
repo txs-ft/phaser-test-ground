@@ -1,4 +1,4 @@
-import { TextBlock } from '../objects/TextBlock';
+import { PhraseBlock as TextBlock } from '../objects/PhraseBlock';
 
 /**
  * 實現{@link TextBlock}拖曳及點擊變色邏輯的控制器。
@@ -15,6 +15,11 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
   private hasDragged: boolean;
 
   /**
+   * 現時控制器正在與之互動的{@link TextBlock}實例。
+   */
+  private block: TextBlock | null = null;
+
+  /**
    * 創建一個{@link TextBlockController}個例。
    * @param scene 場景
    */
@@ -22,9 +27,7 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
     super(scene, "TextBlockController");
     scene.add.existing(this);
     this.hasDragged = false;
-    
     this.setupInput();
-    
   }
   
   // 使用普通事件
@@ -72,8 +75,11 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
     event: Phaser.Types.Input.EventData
   ): void {
     // console.log(`${this.constructor.name}.onDown: ${this.getPointerDragState(pointer)}`);
+    if (!(gameObject instanceof TextBlock))
+      return;
     this.hasDragged = false;
-    this.logBlock(gameObject as TextBlock, "onDown");
+    this.block = gameObject as TextBlock;
+    this.logBlock(this.block, "onDown");
     event.stopPropagation();
   }
 
@@ -101,8 +107,7 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
   ): void {
     const block = gameObject as TextBlock;
     block.setPosition(dragX, dragY);
-    // console.log(`${this.constructor.name}.onDrag: ${this.getPointerDragState(pointer)}`);
-    this.logBlock(gameObject as TextBlock, "onDrag");
+    // this.logBlock(gameObject as TextBlock, "onDrag");
   }
 
   private onDragEnd(
@@ -130,14 +135,18 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
     event: Phaser.Types.Input.EventData
   ): void {
     // console.log(`${this.constructor.name}.onUp: ${this.getPointerDragState(pointer)}`);
+    if (gameObject !== this.block) {
+      return;
+    }
     if (!this.hasDragged) { // 物件沒有經歷過拖曳
       //console.log(`${this.constructor.name}.onUp: click!`);
       this.logBlock(gameObject as TextBlock, "onUp, click");
+      this.block.cyclePoS();
     } else {
       this.logBlock(gameObject as TextBlock, "onUp, dragged");
     }
     this.hasDragged = false;
-    event.stopPropagation();
+    this.block = null;
   }
 
   private onPointerDown(
@@ -160,7 +169,7 @@ export class TextBlockController extends Phaser.GameObjects.GameObject {
   }
 
   private logBlock(block: TextBlock, msg: string): void {
-    console.log(`TextBlock${block.getId()}: ${msg}`);
+    console.log(`TextBlock[${block.text}]: ${msg}`);
   }
 
 /*

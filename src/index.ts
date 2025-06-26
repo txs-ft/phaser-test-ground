@@ -18,10 +18,10 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: {
       // gravity: { x: 0, y: 3136 },
-      gravity: { x: 0, y: 0 },
+      gravity: { x: 0, y: 0 }/*,
       debug: true,
-      debugShowBody: true,
-      debugShowVelocity: true
+      debugShowBody: false,
+      debugShowVelocity: false*/
     }
   },
   //transparent: true

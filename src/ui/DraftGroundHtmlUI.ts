@@ -52,6 +52,7 @@ export class DraftGroundHtmlUI {
       try {
         const clipboardText = await this.getClipboardText();
         this.divCreate_textAreaNew.value = clipboardText;
+        this.inputValidator.validateAndUpdate();
       } catch {
         alert('无法读取剪贴板');
       }
