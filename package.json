@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/path-browserify": "^1.0.3",
     "phaser": "^3.90.0",
-    "txs-phaser-core": "file:../dev-txs-phaser-core",
-    "@types/path-browserify": "^1.0.3"
+    "txs-phaser-core": "file:../dev-txs-phaser-core"
   },
   "devDependencies": {
     "@types/node": "^24.0.1",
