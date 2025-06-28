@@ -273,6 +273,11 @@ p {
     justify-content: center;
 }
 
+#div-sneaky-form {
+    position: relative;
+    z-index: 2000;
+}
+
 /* 移动端适配 */
 @media (max-width: 600px) {
     #divCreate {

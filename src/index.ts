@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import TestScene from './scenes/TestScene';
+import { ScoreSubmissionHandler } from './ScoreSubmissionHandler';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -26,3 +27,29 @@ const config: Phaser.Types.Core.GameConfig = {
 const game = new Phaser.Game(config);
 game.canvas.style.position = "absolute",
 game.canvas.style.zIndex = "100";
+
+const handler = new ScoreSubmissionHandler();
+
+
+handler.setRecord("Boris", 20, "WE*&R)&FD)");
+handler.submit();
+
+setTimeout(() => {
+  handler.setRecord("Alice", 20, "WE*&R)&FD)");
+  handler.submit();
+}, 4000);
+
+setTimeout(() => {
+  handler.setRecord("Crazy Ivan", 20, "WE*&R)&FD)");
+  handler.submit();
+}, 8000);
+
+setTimeout(() => {
+  handler.setRecord("Sip", 20, "WE*&R)&FD)");
+  handler.submit();
+}, 12000);
+
+setTimeout(() => {
+  handler.setRecord("Flip", 20, "WE*&R)&FD)");
+  handler.submit();
+}, 16000);
