@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import TestScene from './scenes/TestScene';
-import { ScoreSubmissionHandler } from './ScoreSubmissionHandler';
+import { GoogleFormSubmissionHandler } from 'txs-phaser-core';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -28,28 +28,33 @@ const game = new Phaser.Game(config);
 game.canvas.style.position = "absolute",
 game.canvas.style.zIndex = "100";
 
-const handler = new ScoreSubmissionHandler();
 
 
-handler.setRecord("Boris", 20, "WE*&R)&FD)");
-handler.submit();
+const handler = new GoogleFormSubmissionHandler(
+  "1FAIpQLSe0t3ksEbT-r6vc9Lij8ADDKvQMV_YYYvBXpvBtLcaxRayCXQ",
+  [
+    "entry.42132087",
+    "entry.426031421",
+    "entry.1870105313",
+    "entry.847587394"
+  ]
+);
+
+
+handler.submit("Boris", Date.now().toString(), "20", "WE*&R)&FD)");
 
 setTimeout(() => {
-  handler.setRecord("Alice", 20, "WE*&R)&FD)");
-  handler.submit();
+  handler.submit("Alice", Date.now().toString(), "20", "WE*&R)&FD)");
 }, 4000);
 
-setTimeout(() => {
-  handler.setRecord("Crazy Ivan", 20, "WE*&R)&FD)");
-  handler.submit();
+/*setTimeout(() => {
+  handler.submit("Crazy Ivan", Date.now().toString(), "20", "WE*&R)&FD)");
 }, 8000);
 
 setTimeout(() => {
-  handler.setRecord("Sip", 20, "WE*&R)&FD)");
-  handler.submit();
+  handler.submit("Sip", Date.now().toString(), "20", "WE*&R)&FD)");
 }, 12000);
 
 setTimeout(() => {
-  handler.setRecord("Flip", 20, "WE*&R)&FD)");
-  handler.submit();
-}, 16000);
+  handler.submit("Flip", Date.now().toString(), "20", "WE*&R)&FD)");
+}, 16000);*/
