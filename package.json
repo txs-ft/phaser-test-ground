@@ -4,7 +4,7 @@
   "author": "txs-ft",
   "license": "MIT",
   "scripts": {
-    "dev": "vite --open \"?parts=The%20quick%20brown%20fox%7cjumps%7cover%7cthe%20lazy%20dog%7c,%7cand%7cfalls%7cinto%7ca%20rubbish%20bin%7c.`&n=The%20quick%20brown%20fox%7cthe%20lazy%20dog%7ca%20rubbish%20bin`&v=jumps`&adj=quick%7clazy`&prep=over%7cinto`&other=.%7c,%7cand\"",
+    "dev": "vite --open \"?q=YWR2ZW50dXJl\"",
     "build": "vite build",
     "preview": "vite preview"
   },
