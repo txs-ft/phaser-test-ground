@@ -1,4 +1,4 @@
-import { DictionaryEntry, DictionaryEntryError, ScreenFlash, SpellingQuestionSetResultJson } from "txs-phaser-core";
+import { DictionaryEntry, DictionaryEntryError, DictionaryEntryErrorCode, ScreenFlash, SpellingQuestionSetResultJson } from "txs-phaser-core";
 import SpellGroundMain from "../scenes/SpellGroundMain";
 import HealthBar from "./HealthBar";
 import { IUserData, UsernameLogger } from "./UsernameLogger";
@@ -44,7 +44,11 @@ export class SpellGroundUI {
       this._audio.src = `https://dictionary.cambridge.org/${entry.getRandomAudioURL()}`;
     }).catch (error => {
       if (error instanceof DictionaryEntryError) {
-        console.error(`${this.constructor.name}載入失敗（DictionaryEntryErrorCode.${error.code}）。原因：`, error);
+        if (error.code === DictionaryEntryErrorCode.NOT_FOUND) {
+          console.warn(`${this.constructor.name}: ${error}`);
+        } else {
+          console.error(`${this.constructor.name}載入失敗（DictionaryEntryErrorCode.${error.code}）。原因：`, error);
+        }
       } else {
         console.error(`${this.constructor.name}未知錯誤：`, error);
       }
@@ -127,6 +131,7 @@ export class SpellGroundUI {
 
   private logErrorNotSupported(): void {
     console.error(`瀏覽器不支援Web Speech API。你正在使用的瀏覽器為：App Code Name: ${navigator.appCodeName}\nApp Name: ${navigator.appName}\nApp version: ${navigator.appVersion}\nUser agent: ${navigator.userAgent}\nPlatform: ${navigator.platform}`)
+    alert("你的瀏覽器不支援Web Speech API，只能載入靜態音頻檔案。");
   }
 
   private onWebSpeechError(e: SpeechSynthesisErrorEvent): void {
