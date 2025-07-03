@@ -8,14 +8,18 @@ export class SpellBlockController extends TextBlockController<SpellBlock> {
   public arrangeBlocks(blocks: SpellBlock[], gap: number = 0, duration: number = 1000): void {
     this.setActive(false);
     const sortedBlocks = [...blocks].sort((a, b) => 
-      a.arcadeBody.x - b.arcadeBody.x
+      a.x - b.x
     );
 
     // 1. 禁用物理
+    let answer = "";
     sortedBlocks.forEach(block => {
-      block.arcadeBody.enable = false;
+      // 不用了，我們決定不對SpellBlock應用物理
+      // block.arcadeBody.enable = false;
       block.isHighlighted = false;
+      answer += block.text;
     });
+    console.log(`答案：${answer}`);
 
     // 2. 计算总宽度和起始位置
     const centerX = 0;
@@ -45,11 +49,12 @@ export class SpellBlockController extends TextBlockController<SpellBlock> {
     // 4. 等待所有缓动完成后恢复物理
     Promise.all(tweens.map(t => new Promise(resolve => t.once('complete', resolve))))
       .then(() => {
-        sortedBlocks.forEach(block => {
+        // 不用了，我們決定不對SpellBlock應用物理
+        /*sortedBlocks.forEach(block => {
           // 恢复物理并重置速度
-          block.arcadeBody.enable = true;
+           block.arcadeBody.enable = true;
           block.arcadeBody.setVelocity(0, 0);
-        });
+        });*/
         
         // 5. 触发事件并恢复交互
         this.setActive(true);

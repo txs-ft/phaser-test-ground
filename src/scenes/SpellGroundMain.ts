@@ -1,8 +1,9 @@
-import { CameraController, DisplayUtils, DataUtils, TextBlockController } from "txs-phaser-core";
+import { CameraController, DisplayUtils, DataUtils, TextBlockController, SpellingQuestionSet } from "txs-phaser-core";
 import { SpellBlock } from "../objects/SpellBlock";
 import { SpellBlockController } from "../objects/SpellBlockController";
-import { SpellGroundScore } from "../SpellGroundScore";
+import { SpellGroundResult } from "../SpellGroundScore";
 import { SpellGroundUI } from "../ui/SpellGroundUI";
+import SubmissionHandler from "../SubmissionHandler";
 
 enum SpellGroundState {
   LOADING = "LOADING",
@@ -17,23 +18,22 @@ export default class SpellGroundMain extends Phaser.Scene {
 
   private _ui: SpellGroundUI;
   private _state: SpellGroundState = SpellGroundState.LOADING;
-  private _question: string = "";
-  private _score: SpellGroundScore.Manager;
   private _hp: bigint = SpellGroundMain.PLAYER_MAX_HP;
-
+  
   // 於Phaser.Game.init()中初始化
-
+  
   // 於Phaser.Game.create()中初始化
   private _cameraController!: CameraController;
   private _blockController!: SpellBlockController;
   private _blockGroup!: Phaser.Physics.Arcade.Group;
   private _activeBlocks!: SpellBlock[];
   private _bgGrid!: Phaser.GameObjects.Graphics;
+  private _questionSet!: SpellingQuestionSet;
+  private _score!: SubmissionHandler;
   
   constructor() {
     super('MainScene');
     this._ui = new SpellGroundUI(this);
-    this._score = new SpellGroundScore.Manager();
   }
 
   init() {
@@ -72,7 +72,11 @@ export default class SpellGroundMain extends Phaser.Scene {
     this.physics.add.collider(this._blockGroup, this._blockGroup);
     this._activeBlocks = [];
 
-    this.setupQuestion();
+    this.setupQuestions();
+    this._score = new SubmissionHandler();
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this._score.destroy();
+    });
 
     this._state = SpellGroundState.READY;
     
@@ -106,18 +110,22 @@ export default class SpellGroundMain extends Phaser.Scene {
 
   }
 
-  private setupQuestion(): void {
+  private setupQuestions(): void {
     const param = new URLSearchParams(window.location.search);
     const q = param.get("q"); // 來自 https://...?q=PWOEFJPSDO
     if (q) {
-      this._question = this._ui.word = atob(q);
-      this.createPhonemes(this._question.split(""));
+      // URL提供了題目
+      const qs = atob(q).split("|");
+      const setName = param.get("set") ?? "unknown";
+      const shuffle = param.get("shuffle") ? Boolean(param.get("shuffle")) : false;
+      this._questionSet = new SpellingQuestionSet(qs, setName, shuffle);
+      this._ui.word = this._questionSet.current;
     } else {
-      this._question = this._ui.word = "quality";
-      this.createPhonemes([
-        "q", "u", "a", "l", "i", "t", "y"
-      ]);
+      // URL沒有提供題目
+      this._ui.word = "quality";
+      this._questionSet = new SpellingQuestionSet(["quality", "adventure"], "default", false);
     }
+    this.createPhonemes(this._questionSet.current.split(""));
   }
 
   private createPhonemes(phonemes: string[]): void {
@@ -196,16 +204,15 @@ export default class SpellGroundMain extends Phaser.Scene {
 
   private onFirstInteracted(sender: TextBlockController<SpellBlock>): void {
     sender.FirstInteracted.off(this.onFirstInteracted);
-    if (!this._score.isActive)
-      this._score.startTimer();
+    if (!this._questionSet.hasStarted)
+      this._questionSet.startTimer();
   }
 
   public mergeBlocks() {
     if (this._state !== SpellGroundState.READY)
       return;
-    if (!this._score.isActive) {
-      this._score.startTimer();
-    }
+    if (!this._questionSet.hasStarted)
+      this._questionSet.startTimer();
     this._blockController.arrangeBlocks(this._activeBlocks, 0, 1000);
     this._cameraController.autoPan(0, 0, 1000, Phaser.Math.Easing.Cubic.Out);
     this._state = SpellGroundState.CHECKING;
@@ -220,30 +227,54 @@ export default class SpellGroundMain extends Phaser.Scene {
   private checkAnswer(): void {
     // 1. 按当前X坐标排序（从左到右）
     const sortedBlocks = [...this._activeBlocks].sort((a, b) => 
-      a.arcadeBody.x - b.arcadeBody.x
+      a.x - b.x
     );
     let answer = "";
     for (const block of sortedBlocks) {
       block.isHighlighted = false;
       answer += block.text;
     }
-    this._score.try(answer);
-    if (this._question === answer) {
+    if (this._questionSet.check(answer)) {
       // 正確！
       console.log(`${this.constructor.name}.checkAnswer: 答案"${answer}"正確！✅`);
-      this._state = SpellGroundState.WIN;
-      this._blockController.setActive(false);
-      this._cameraController.setActive(false);
-      this._score.endTimer();
       this._ui.flashGreen();
-      const userData = this._ui.userData;
-      if (userData) // 有邀請碼才發分數
-        this._score.submit(userData.name, userData.invitationCode, this._hp);
+      if (this._questionSet.next()) {
+        this._state = SpellGroundState.READY;
+        for (const block of this._activeBlocks) {
+          this._blockGroup.killAndHide(block);
+        }
+        this._activeBlocks.length = 0;
+        this.createPhonemes(this._questionSet.current.split(""));
+        this._ui.word = this._questionSet.current;
+      } else {
+        this._state = SpellGroundState.WIN;
+        this._blockController.setActive(false);
+        this._cameraController.setActive(false);
+        this._questionSet.endTimer();
+        const userData = this._ui.userData;
+        if (userData) {
+          // 有邀請碼才發分數
+          const endScore = this._hp * BigInt(this._questionSet.size);
+
+          const result = this._questionSet.generateResult();
+          // console.log("result");
+          // console.log(result);
+          // console.log("result.toJson()");
+          // console.log(result.toJson());
+          // console.log("JSON.stringify(result.toJson())");
+          // console.log(JSON.stringify(result.toJson()));
+          
+          const json = result.toJson();
+          this._score.submit(userData.name, userData.invitationCode, endScore, this._ui.audioPlayCount, JSON.stringify(json), this._questionSet.name);
+
+          this._ui.showResult(userData.name, json, this._hp, this._ui.audioPlayCount);
+        }
+      }
     } else {
       // 錯誤！
       console.log(`${this.constructor.name}.checkAnswer: 答案"${answer}"錯誤！❌`);
       this._blockController.arrangeBlocks(this._activeBlocks, 15, 500);
-      this.giveHints(sortedBlocks, this._question);
+      this.giveHints(sortedBlocks, this._questionSet.current);
       this._ui.flashRed();
       this._state = SpellGroundState.READY;
       if (this._hp > 1)
@@ -315,8 +346,6 @@ export default class SpellGroundMain extends Phaser.Scene {
   private splitWordToPhonemes(word: string): string[] {
     return word.split("");
   }
-  
-
     
 
 }

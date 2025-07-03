@@ -4,7 +4,7 @@
   "author": "txs-ft",
   "license": "MIT",
   "scripts": {
-    "dev": "vite --open \"?q=YWR2ZW50dXJl\"",
+    "dev": "vite --open \"?q=YmFzZXxjdWJlfGluZGV4fHBvd2VyfHJvb3Q=&set=VS+Code+Test&shuffle=true\"",
     "build": "vite build",
     "preview": "vite preview"
   },

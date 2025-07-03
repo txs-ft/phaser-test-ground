@@ -62,3 +62,10 @@ function isWeChatBrowser() {
 document.addEventListener('DOMContentLoaded', () => {
   if (isWeChatBrowser()) showWeChatWarning();
 });
+
+/*function logStuff(): void {
+  const q = btoa("base|cube|index|power|root");
+  console.log(q);
+}
+
+logStuff();*/

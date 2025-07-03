@@ -1,11 +1,12 @@
-import { GoogleFormSubmissionHandler } from "txs-phaser-core";
+import { GoogleFormSubmissionHandler, SpellingQuestionSet } from "txs-phaser-core";
 
 /**
  * 拼字游戏学生单次作答记录
  */
-export namespace SpellGroundScore {
+export namespace SpellGroundResult {
   /**
    * 单次作答记录实体类
+   * @deprecated
    */
   export class Entry {
     /**
@@ -30,13 +31,41 @@ export namespace SpellGroundScore {
   }
 
   /**
+   * @deprecated
+   */
+  export class QuestionEntry {
+
+    entries: Entry[];
+
+    question: string;
+
+    constructor(question: string) {
+      this.entries = [];
+      this.question = question;
+    }
+
+  }
+
+  /**
    * 拼字游戏成绩管理器
+   * @deprecated
    */
   export class Manager {
     private _startTime: number = 0;
+    private _questions: QuestionEntry[] = [];
+
+    /**
+     * @deprecated
+     */
     private _entries: Entry[] = [];
     private _endTime: number = 0;
     private _active: boolean = false;
+
+    constructor(questions: string[]) {
+      for (const question of questions) {
+        this._questions.push(new QuestionEntry(question));
+      }
+    }
 
     /**
      * 开始游戏计时器
@@ -106,7 +135,7 @@ export namespace SpellGroundScore {
       });
     }
     
-    submit(name: string, auth: string, bonus: bigint) {
+    submit(name: string, auth: string, score: bigint) {
       /*
       */
      const handler = new GoogleFormSubmissionHandler(
@@ -118,7 +147,7 @@ export namespace SpellGroundScore {
         "entry.1907891557",
         "entry.1160595417"
       ]);
-      handler.submit(Date.now().toString(), name, auth, String(bonus), this.toJson());
+      handler.submit(Date.now().toString(), name, auth, String(score), this.toJson());
 
       /*
       */
